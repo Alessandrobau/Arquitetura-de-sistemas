@@ -1,0 +1,96 @@
+type: collection.insomnia.rest/5.0
+name: ARQUITETURA_DE_SISTEMAS
+meta:
+  id: wrk_aca8d13b700449e186caabf8f5bac7a4
+  created: 1755613130767
+  modified: 1755613130767
+  description: ""
+collection:
+  - url: http://192.168.0.13:3000/products
+    name: GET PRODUCTS
+    meta:
+      id: req_69e429e8b3ef481baa53559db17696a5
+      created: 1755613144828
+      modified: 1755613177901
+      isPrivate: false
+      description: ""
+      sortKey: -1755613144828
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.4.0
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://192.168.0.13:3000/orders
+    name: POST NEW ORDER
+    meta:
+      id: req_1ad96e958e9f4fb8a81fdb083184511b
+      created: 1755613182694
+      modified: 1755618072311
+      isPrivate: false
+      description: ""
+      sortKey: -1755613182694
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+            "cliente_id": 2,
+            "itens": [
+                { "product_id": 3, "quantidade": 1 },
+                { "product_id": 4, "quantidade": 1 }
+            ]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.4.0
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://192.168.0.13:3000/orders
+    name: GET ORDERS
+    meta:
+      id: req_afd01a18343749a382e2e3a2641abb7e
+      created: 1755614848296
+      modified: 1755614867589
+      isPrivate: false
+      description: ""
+      sortKey: -1755614848296
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.4.0
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_723c4958dcdc9d8282e9dc376d645d4abbca899c
+    created: 1755613130774
+    modified: 1755613130774
+environments:
+  name: Base Environment
+  meta:
+    id: env_723c4958dcdc9d8282e9dc376d645d4abbca899c
+    created: 1755613130772
+    modified: 1755613130772
+    isPrivate: false
