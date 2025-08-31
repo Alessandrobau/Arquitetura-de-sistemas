@@ -11,4 +11,6 @@ router.post('/orders', orderController.createOrder);
 
 router.get('/products', productController.listProducts);
 
+router.post('/products', productController.createProduct);
+
 module.exports = router;

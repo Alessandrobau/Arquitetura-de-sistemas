@@ -1,20 +1,28 @@
-let products = [
-    { id: 1, nome: 'Notebook', preco: 3500.00, estoque: 5 },
-    { id: 2, nome: 'Mouse', preco: 89.90, estoque: 10 },
-    { id: 3, nome: 'Teclado', preco: 250.00, estoque: 3 },
-    { id: 4, nome: 'Monitor"', preco: 950.00, estoque: 1 }
-];
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const Product = {
-    findAll: () => products,
-    
-    findById: (id) => products.find(p => p.id === id),
+    findAll: async () => {
+        return await prisma.product.findMany();
+    },
 
-    updateStock: (productId, quantity) => {
-        const product = Product.findById(productId);
-        if (product) {
-            product.estoque -= quantity;
-        }
+    findById: async (id) => {
+        return await prisma.product.findUnique({
+            where: { id: parseInt(id, 10) }
+        });
+    },
+
+    create: async ({ name, price, stock }) => {
+        return await prisma.product.create({
+            data: { name, price, stock }
+        });
+    },
+
+    updateStock: async (id, quantidade) => {
+        return await prisma.product.update({
+            where: { id: parseInt(id, 10) },
+            data: { stock: { decrement: quantidade } }
+        });
     }
 };
 
