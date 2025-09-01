@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { updateProduct } = require('../controllers/productController');
 const prisma = new PrismaClient();
 
 const Product = {
@@ -23,6 +24,21 @@ const Product = {
             where: { id: parseInt(id, 10) },
             data: { stock: { decrement: quantidade } }
         });
+    },
+
+    updateById: async (id, productData) => {
+        const product = await prisma.product.update({
+            where: { id: id },
+            data: productData,
+        });
+        return product;
+    },
+
+    delete: async (id) => {
+        const deletedProduct = await prisma.product.delete({
+            where: { id: parseInt(id, 10) }
+        });
+        return deletedProduct;
     }
 };
 

@@ -44,7 +44,38 @@ const productController = {
             console.error("Erro ao criar produto:", error);
             res.status(500).json({ message: "Erro no servidor" });
         }
-    }
-};
+    },
 
+    updateProduct: async (req, res) => {
+        const id = parseInt(req.params.id);
+        const productData = req.body;
+
+        try {
+            const updatedProduct = await Product.updateById(id, productData);
+
+            if (!updatedProduct) {
+                return res.status(404).json({ message: 'Produto não encontrado para atualização.' });
+            }
+
+            res.status(200).json(updatedProduct);
+        } catch (error) {
+            console.error("Erro ao atualizar o produto", error);
+            res.status(500).json({ message: 'Erro no servidor' });
+        }
+    },
+    deleteProduct: async (req, res) => {
+        const id = parseInt(req.params.id);
+
+        try {
+            const deletedProduct = await Product.delete(id);
+            if (!deletedProduct) {
+                return res.status(404).json({ message: 'Produto não encontrado para exclusão.' });
+            }
+            res.status(200).json({ message: 'Produto excluído com sucesso.' });
+        } catch (error) {
+            console.error("Erro ao excluir o produto",error);
+            res.status(500).json({ message: 'Erro no servidor' });
+        }
+    }
+}
 module.exports = productController;
