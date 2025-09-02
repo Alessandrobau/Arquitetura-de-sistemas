@@ -6,7 +6,7 @@
 
 --
 
-## REQUIREMENTS
+## Subir aplicação
 
 - Instalar prisma
 
