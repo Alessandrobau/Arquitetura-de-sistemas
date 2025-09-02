@@ -1,7 +1,6 @@
 const Product = require('../models/productModel');
 
 const productController = {
-    // listar todos os produtos
     listProducts: async (req, res) => {
         try {
             const products = await Product.findAll();
@@ -12,7 +11,6 @@ const productController = {
         }
     },
 
-    // buscar produto por ID
     getProductById: async (req, res) => {
         try {
             const { id } = req.params;
@@ -29,7 +27,6 @@ const productController = {
         }
     },
 
-    // criar novo produto
     createProduct: async (req, res) => {
         try {
             const { name, price, stock } = req.body;
