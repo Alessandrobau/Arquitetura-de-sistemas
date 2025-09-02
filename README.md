@@ -2,6 +2,7 @@
 
 - ajuste das respostas dos erros http
 - save order aparecendo o total value errado
+- alterar updateProduct method POST -> PUT
 
 
 
