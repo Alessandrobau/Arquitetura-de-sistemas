@@ -10,24 +10,24 @@
 
 - Instalar prisma
 
-´´´ bash
+```bash
 npm install @prisma/client
-´´´
+```
 
 - Migrate
 
-´´´ bash
+``` bash
 npx prisma migrate dev
-´´´
+```
 
 - Subir banco docker
 
-  ´´´ bash
+ ``` bash
 sudo docker compose up -d 
-  ´´´
+```
 
 - start application
 
-  ``` bash
+``` bash
 node app.js start
-´´´
+```
