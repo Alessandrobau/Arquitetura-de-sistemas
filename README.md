@@ -1,11 +1,11 @@
+# Gabriel revise o código
+
+
 ## TO-DO
 
 - ajuste das respostas dos erros http
 - save order aparecendo o total value errado
 - alterar updateProduct method POST -> PUT
-
-# Gabriel revise o código
-
 
 
 ## Subir aplicação
