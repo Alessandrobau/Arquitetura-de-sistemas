@@ -4,6 +4,7 @@
 - save order aparecendo o total value errado
 - alterar updateProduct method POST -> PUT
 
+# Gabriel revise o código
 
 
 
@@ -19,6 +20,12 @@ npm install @prisma/client
 
 ``` bash
 npx prisma migrate dev
+```
+
+- Reset banco de dados
+
+``` bash
+npx prisma migrate reset
 ```
 
 - Subir banco docker
