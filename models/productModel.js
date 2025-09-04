@@ -20,9 +20,19 @@ const Product = {
     },
 
     updateStock: async (id, quantidade) => {
+        if (typeof quantidade !== 'number' || isNaN(quantidade)) {
+            throw new Error('Invalid quantity for stock update.');
+        }
         return await prisma.product.update({
             where: { id: parseInt(id, 10) },
             data: { stock: { decrement: quantidade } }
+        });
+    },
+
+    updateStockbyId: async (id, stock) => {
+        return await prisma.product.update({
+            where: { id: parseInt(id, 10) },
+            data: { stock: stock }
         });
     },
 
@@ -35,6 +45,12 @@ const Product = {
     },
 
     delete: async (id) => {
+        const related = await prisma.orderProduct.findFirst({
+            where: { id_product: parseInt(id, 10) }
+        });
+        if (related) {
+            throw new Error('Não é possível excluir: produto já está vinculado a um pedido.');
+        }
         const deletedProduct = await prisma.product.delete({
             where: { id: parseInt(id, 10) }
         });
