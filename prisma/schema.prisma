@@ -8,31 +8,56 @@ datasource db {
 }
 
 model Order {
-  id          Int             @id @default(autoincrement())
-  date        DateTime
-  total_value Decimal
-
+  id            Int            @id @default(autoincrement())
+  date          DateTime
+  total_value   Decimal
+  clientId      Int            @default(1) // Add default value here
+  client        Client         @relation(fields: [clientId], references: [id])
+  status        OrderStatus    @default(AGUARDANDO_PAGAMENTO)
   orderProducts OrderProduct[]
+  Payment       Payment[]
 }
 
 model Product {
-  id          Int             @id @default(autoincrement())
-  name        String
-  price       Decimal
-  stock       Int
+  id    Int     @id @default(autoincrement())
+  name  String
+  price Decimal
+  stock Int
 
   orderProducts OrderProduct[]
 }
 
 model OrderProduct {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   quant       Int
   unit_value  Decimal
   total_value Decimal
 
-  product   Product @relation(fields: [id_product], references: [id])
+  product    Product @relation(fields: [id_product], references: [id])
   id_product Int
 
-  order     Order   @relation(fields: [id_order], references: [id])
-  id_order  Int
+  order    Order @relation(fields: [id_order], references: [id])
+  id_order Int
+}
+
+model Client {
+  id     Int     @id @default(autoincrement())
+  name   String
+  email  String  @unique
+  orders Order[]
+}
+
+model Payment {
+  id      Int     @id @default(autoincrement())
+  method  String
+  value   Decimal
+  order   Order   @relation(fields: [orderId], references: [id])
+  orderId Int
+}
+
+enum OrderStatus {
+  AGUARDANDO_PAGAMENTO
+  FALHA_NO_PAGAMENTO
+  PAGO
+  CANCELADO
 }
