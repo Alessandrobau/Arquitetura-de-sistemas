@@ -63,7 +63,7 @@ Antes de começar, certifique-se de ter instalado:
 
 ## 🛠️ Tecnologias Utilizadas
 
-- Node.js / Express (exemplo)
+- Node.js / Express
 - PostgreSQL
 - Docker & Docker Compose
 - Scripts de migração com Prisma
