@@ -12,7 +12,7 @@ payment-service/     # Serviço de pagamentos
 product-service/     # Serviço de produtos
 user-service/        # Serviço de usuários
 docker-compose.yml   # Orquestração dos serviços e bancos de dados
-start_DBs.sh         # Script auxiliar para subir os bancos
+start.sh         # Script auxiliar para subir os bancos
 README.md            # Documentação do projeto
 ```
 
