@@ -38,9 +38,9 @@ Antes de começar, certifique-se de ter instalado:
 
 2. Suba os containers com o Docker Compose:
    ```bash
-   ./start_DBs.sh
+   ./start.sh
    ```
-   > Este script executa o docker-compose.yml e inicializa os bancos de dados necessários e executa as migrações para cada serviço.
+   > Este script executa o docker-compose.yml, inicializa os bancos de dados necessários e executa as migrações para cada serviço.
    
 3. Inicie os serviços:
    ```bash
@@ -66,7 +66,7 @@ Antes de começar, certifique-se de ter instalado:
 - Node.js / Express (exemplo)
 - PostgreSQL
 - Docker & Docker Compose
-- Scripts de migração (Knex / Sequelize, etc.)
+- Scripts de migração com Prisma
 
 ---
 
