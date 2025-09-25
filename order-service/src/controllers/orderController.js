@@ -1,4 +1,4 @@
-const orderService = require('../models/order.service');
+const orderService = require('../models/orderService');
 const { OrderStatus } = require('@prisma/client');
 
 exports.createOrder = async (req, res) => {
