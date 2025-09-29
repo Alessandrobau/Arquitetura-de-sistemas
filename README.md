@@ -1,41 +1,76 @@
-# Gabriel revise o código
+# Backend e-commerce
 
+Este projeto contém uma arquitetura de microserviços para **usuários, produtos, pedidos e pagamentos**, orquestrados via **Docker Compose**.
 
-## TO-DO
+---
 
-- ajuste das respostas dos erros http
-- save order aparecendo o total value errado
-- alterar updateProduct method POST -> PUT
+## 📂 Estrutura do Projeto
 
-
-## Subir aplicação
-
-- Instalar prisma
-
-```bash
-npm install @prisma/client
+```
+order-service/       # Serviço de pedidos
+payment-service/     # Serviço de pagamentos
+product-service/     # Serviço de produtos
+user-service/        # Serviço de usuários
+docker-compose.yml   # Orquestração dos serviços e bancos de dados
+start_DBs.sh         # Script auxiliar para subir os bancos
+README.md            # Documentação do projeto
 ```
 
-- Migrate
+---
 
-``` bash
-npx prisma migrate dev
-```
+## 🚀 Pré-requisitos
 
-- Reset banco de dados
+Antes de começar, certifique-se de ter instalado:
 
-``` bash
-npx prisma migrate reset
-```
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Git](https://git-scm.com/)
 
-- Subir banco docker
+---
 
- ``` bash
-sudo docker compose up -d 
-```
+## ▶️ Como Executar o Projeto
 
-- start application
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+   cd SEU_REPOSITORIO
+   ```
 
-``` bash
-node app.js start
-```
+2. Suba os containers com o Docker Compose:
+   ```bash
+   ./start_DBs.sh
+   ```
+   > Este script executa o docker-compose.yml e inicializa os bancos de dados necessários e executa as migrações para cada serviço.
+   
+3. Inicie os serviços:
+   ```bash
+   cd user-service && npm start
+   cd product-service && npm start
+   cd order-service && npm start
+   cd payment-service && npm start
+   ```
+
+---
+
+## 🌐 Endpoints (exemplos)
+
+- **User Service** → `http://localhost:3001`
+- **Product Service** → `http://localhost:3002`
+- **Order Service** → `http://localhost:3003`
+- **Payment Service** → `http://localhost:3004`
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- Node.js / Express (exemplo)
+- PostgreSQL
+- Docker & Docker Compose
+- Scripts de migração (Knex / Sequelize, etc.)
+
+---
+
+## 📌 Observações
+
+- Certifique-se de que as portas definidas em cada serviço não estejam em uso.
+- Configure variáveis de ambiente em cada serviço (ex.: `.env`) conforme necessário.

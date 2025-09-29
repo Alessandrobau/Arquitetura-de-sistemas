@@ -1,36 +1,172 @@
 version: '3.8'
 
 services:
-  postgres-db:
+  # --- BANCOS DE DADOS ---
+  users-db:
     image: postgres:15
-    container_name: postgres_container
+    container_name: users_db
     restart: always
     environment:
-      POSTGRES_DB: ecommerce
-      POSTGRES_PASSWORD: naouseadmin
-      POSTGRES_USER: postgres
-      # POSTGRES_DB: senha_postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: users_db
+    volumes:
+      - users_postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_db_data:/var/lib/postgresql/data
+    healthcheck: # <-- ADICIONADO
+      test: ["CMD-SHELL", "pg_isready -U admin -d users_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  products-db:
+    image: postgres:15
+    container_name: products_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: products_db
+    volumes:
+      - products_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck: # <-- ADICIONADO
+      test: ["CMD-SHELL", "pg_isready -U admin -d products_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payments-db:
+    image: postgres:15
+    container_name: payments_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: payments_db
+    volumes:
+      - payments_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck: # <-- ADICIONADO
+      test: ["CMD-SHELL", "pg_isready -U admin -d payments_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orders-db:
+    image: mongo:6.0
+    container_name: orders_db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - orders_mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.getSiblingDB('admin').runCommand({ping: 1})"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # --- SERVIÇOS DA APLICAÇÃO ---
+  user-service:
+    build: ./user-service
+    container_name: users_service
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin@users-db:5432/users_db
+    depends_on:
+      users-db: # <-- MODIFICADO
+        condition: service_healthy
+
+  product-service:
+    build: ./product-service
+    container_name: products_service
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin@products-db:5432/products_db
+    depends_on:
+      products-db: # <-- MODIFICADO
+        condition: service_healthy
+
+  payment-service:
+    build: ./payment-service
+    container_name: payments_service
+    restart: always
+    ports:
+      - "3003:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin:admin@payments-db:5432/payments_db
+    depends_on:
+      payments-db: # <-- MODIFICADO
+        condition: service_healthy
+
+  order-service:
+    build: ./order-service
+    container_name: orders_service
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - DATABASE_URL=mongodb://admin:admin@orders-db:27017/orders_db?authSource=admin
+      - USER_API_URL=http://user-service:3000
+      - PRODUCT_API_URL=http://product-service:3000
+      - PAYMENT_API_URL=http://payment-service:3000
+    depends_on:
+      orders-db: # <-- MODIFICADO
+        condition: service_healthy
+      user-service:
+        condition: service_started # <-- Or service_healthy if your app has a healthcheck
+      product-service:
+        condition: service_started
+        
+  # --- FERRAMENTAS DE GERENCIAMENTO ---
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin4_container
+    container_name: pgadmin_ui
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_ADDRESS: '0.0.0.0'
     ports:
       - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres-db
+      - users-db
+      - products-db
+      - payments-db
 
+  mongo-express:
+    image: mongo-express
+    container_name: mongo_express_ui
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      ME_CONFIG_MONGODB_SERVER: orders-db
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin@orders-db:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    depends_on:
+      - orders-db
+
+# --- VOLUMES PARA PERSISTÊNCIA DE DADOS ---
 volumes:
-  postgres_db_data:
-    driver: local
+  users_postgres_data:
+  products_postgres_data:
+  payments_postgres_data:
+  orders_mongo_data:
   pgadmin_data:
-    driver: local
