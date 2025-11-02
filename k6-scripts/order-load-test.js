@@ -5,11 +5,11 @@ export const options = {
   stages: [
     { duration: "30s", target: 10 },
     { duration: "1m", target: 50 },
-    // { duration: "1m", target: 100 },
-    // { duration: "1m", target: 200 },
-    // { duration: "1m", target: 500 },
-    // { duration: "1m", target: 800 },
-    // { duration: "1m", target: 1000 },
+    { duration: "1m", target: 100 },
+    { duration: "1m", target: 200 },
+    { duration: "1m", target: 500 },
+    { duration: "1m", target: 800 },
+    { duration: "1m", target: 1000 },
     { duration: "30s", target: 0 },
   ],
   thresholds: {
@@ -19,7 +19,7 @@ export const options = {
 };
 
 export default function () {
-  const url = "http://localhost:3003/orders/1";
+  const url = "http://192.168.3.102:3002/orders/68db277874b2fffa9e125d8e";
   
   const params = {
     headers: { "Content-Type": "application/json" },

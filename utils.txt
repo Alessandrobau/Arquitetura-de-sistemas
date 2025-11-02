@@ -7,7 +7,7 @@ docker-compose run --rm k6 run --out influxdb=http://influxdb:8086/k6-payments /
 
 Configurar o Grafana
 
-Acesse o Grafana → http://localhost:3000
+Acesse o Grafana → http://localhost:3020
 
 Faça login (admin / admin)
 

@@ -19,7 +19,7 @@ export const options = {
 };
 
 export default function () {
-  const url = "http://payment-service:3000/payments/1/process";
+  const url = "http://192.168.3.102:3003/payments/1ec82a96-bd94-4b68-8327-64df6615dea5/process";
   
   const payload = JSON.stringify({ payment_method: "Cartão de Crédito" });
 
