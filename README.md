@@ -1,76 +1,30 @@
-# Backend e-commerce
+# arq_si_ms
 
-Este projeto contém uma arquitetura de microserviços para **usuários, produtos, pedidos e pagamentos**, orquestrados via **Docker Compose**.
+## Executar MongoDB local com Replica Set
 
----
+O serviço de pedidos usa Prisma com MongoDB, então o banco precisa rodar em **replica set** (mesmo em ambiente local). O `docker-compose.yml` já inclui os containers necessários (`orders-db` e `orders-db-init`). Para iniciar:
 
-## 📂 Estrutura do Projeto
-
-```
-order-service/       # Serviço de pedidos
-payment-service/     # Serviço de pagamentos
-product-service/     # Serviço de produtos
-user-service/        # Serviço de usuários
-docker-compose.yml   # Orquestração dos serviços e bancos de dados
-start_DBs.sh         # Script auxiliar para subir os bancos
-README.md            # Documentação do projeto
-```
-
----
-
-## 🚀 Pré-requisitos
-
-Antes de começar, certifique-se de ter instalado:
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- [Git](https://git-scm.com/)
-
----
-
-## ▶️ Como Executar o Projeto
-
-1. Clone o repositório:
+1. Suba o banco:
    ```bash
-   git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-   cd SEU_REPOSITORIO
+   docker compose up -d orders-db
+   ```
+2. Execute o init uma vez (ele espera o Mongo ficar pronto, cria o replica set e encerra):
+   ```bash
+   docker compose up orders-db-init
+   ```
+3. Depois que o init terminar, suba os demais serviços normalmente:
+   ```bash
+   docker compose up -d cliente-service produto-service pagamentos-service pedidos-service notificacoes-service mongo-express
    ```
 
-2. Suba os containers com o Docker Compose:
-   ```bash
-   ./start_DBs.sh
-   ```
-   > Este script executa o docker-compose.yml e inicializa os bancos de dados necessários e executa as migrações para cada serviço.
-   
-3. Inicie os serviços:
-   ```bash
-   cd user-service && npm start
-   cd product-service && npm start
-   cd order-service && npm start
-   cd payment-service && npm start
-   ```
+> Se precisar reiniciar tudo do zero, use `docker compose down mongo-express pedidos-service orders-db-init orders-db` e, opcionalmente, `docker volume rm arq_si_ms_orders_mongo_data` para limpar os dados antes de repetir os passos.
 
----
+Com isso, o Prisma passa a criar pedidos usando o container Mongo local e o endpoint `POST /api/orders` retorna o `id` necessário para o fluxo de pagamentos.
 
-## 🌐 Endpoints (exemplos)
+## Serviço de Notificações
 
-- **User Service** → `http://localhost:3001`
-- **Product Service** → `http://localhost:3002`
-- **Order Service** → `http://localhost:3003`
-- **Payment Service** → `http://localhost:3004`
+- Local: `./notificacoes`
+- Endpoint principal: `POST /api/notifications/order-paid`
+- Responsabilidade: receber eventos de pagamento aprovado e registrar/logar a notificação do cliente. O serviço consulta o `cliente-service` (quando o `userId` é informado) para personalizar a mensagem.
 
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- Node.js / Express (exemplo)
-- PostgreSQL
-- Docker & Docker Compose
-- Scripts de migração (Knex / Sequelize, etc.)
-
----
-
-## 📌 Observações
-
-- Certifique-se de que as portas definidas em cada serviço não estejam em uso.
-- Configure variáveis de ambiente em cada serviço (ex.: `.env`) conforme necessário.
+O serviço de pagamentos dispara automaticamente a notificação após atualizar o pedido para `PAGO`.
