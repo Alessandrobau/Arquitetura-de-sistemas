@@ -1,76 +1,103 @@
-# Backend e-commerce
+# E-Commerce Microservices — README
 
-Este projeto contém uma arquitetura de microserviços para **usuários, produtos, pedidos e pagamentos**, orquestrados via **Docker Compose**.
+Este repositório contém um conjunto de microserviços para um e-commerce (Clientes, Produtos, Pedidos, Pagamentos e Notificações) preparados para rodar via Docker Compose ou localmente para desenvolvimento.
 
----
+## Serviços e portas (padrão do docker-compose)
+- `cliente-service` — `http://localhost:3001` (Clientes)
+- `produto-service` — `http://localhost:3002` (Produtos)
+- `pedidos-service` — `http://localhost:3003` (Pedidos)
+- `pagamentos-service` — `http://localhost:3004` (Pagamentos)
+- `notificacoes-service` — `http://localhost:3005` (Notificações)
+- RabbitMQ Management UI: `http://localhost:15672` (usuário: `user` / senha: `password`)
 
-## 📂 Estrutura do Projeto
+## Requisitos
+- Docker 20+ e Docker Compose
+- Node.js 18+ (se for rodar serviços localmente)
+- npm
+
+## Variáveis de ambiente importantes
+- `RABBITMQ_URL` — URL de conexão com RabbitMQ (ex.: `amqp://user:password@rabbitmq:5672`)
+- `DATABASE_URL` — URL do banco (cada serviço que usa Prisma define a sua própria variável no `docker-compose`)
+- Arquivo de exemplo de variáveis: `.env` (já presente para `pedidos` MongoDB nesse projeto)
+
+## Rodando com Docker Compose (recomendado)
+Este repositório já contém um `docker-compose.yml` configurado com bancos, serviços e RabbitMQ.
+
+1. Construir e subir tudo:
+
+```bash
+docker-compose up --build -d
+```
+
+2. Verificar logs:
+
+```bash
+docker-compose logs -f pagamentos-service
+docker-compose logs -f notificacoes-service
+docker-compose logs -f rabbitmq
+```
+
+3. Parar e remover:
+
+```bash
+docker-compose down
+```
+
+Observações:
+- O `docker-compose.yml` já executa as migrations e seeds (quando aplicável) nas definições `command` de cada serviço.
+- RabbitMQ já está configurado no compose com usuário `user` e senha `password`.
+
+## RabbitMQ — como funciona aqui
+- Exchange: `orders` (type `topic`)
+- Routing key usada para pagamento: `order.paid`
+- Queue criada para notificações: `notification.order-paid` (binding `orders` -> `notification.order-paid` com `order.paid`)
+- `pagamentos-service` publica eventos quando um pagamento é aprovado (evento contém `orderId`, `clientName`, `timestamp`).
+- `notificacoes-service` consome e apenas simula envio imprimindo no console:
 
 ```
-order-service/       # Serviço de pedidos
-payment-service/     # Serviço de pagamentos
-product-service/     # Serviço de produtos
-user-service/        # Serviço de usuários
-docker-compose.yml   # Orquestração dos serviços e bancos de dados
-start_DBs.sh         # Script auxiliar para subir os bancos
-README.md            # Documentação do projeto
+📧 NOTIFICAÇÃO ENVIADA:
+{clientName}, seu pedido foi PAGO com sucesso e será despachado em breve.
 ```
 
----
+## Testes e uso manual (Insomnia / Postman)
+Há um arquivo pronto para importar no Insomnia: `insomnia_collection.json` na raiz do repositório. Ele contém todas as requisições para os endpoints de cada serviço.
 
-## 🚀 Pré-requisitos
+Fluxo de teste recomendado (End-to-End):
+1. Criar cliente (`POST /api/clients` no serviço `cliente-service`)
+2. Criar produtos (`POST /api/products` no `produto-service`)
+3. Criar pedido (`POST /api/orders` no `pedidos-service`)
+4. Criar tipo de pagamento (`POST /api/type-payments` no `pagamentos-service`)
+5. Criar pagamento (`POST /api/payments` no `pagamentos-service`) — referenciando `orderId`
+6. Processar pagamento (`PATCH /api/payments/:id/process`) — quando aprovado, publica evento no RabbitMQ e o `notificacoes-service` exibirá a mensagem nos logs
 
-Antes de começar, certifique-se de ter instalado:
+Exemplo de processamento do pagamento via curl:
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- [Git](https://git-scm.com/)
+```bash
+curl -X PATCH http://localhost:3004/api/payments/1/process \
+  -H "Content-Type: application/json" \
+  -d '{"value": 3500.00}'
+```
 
----
+## Arquivos importantes
+- `docker-compose.yml` — orquestração de containers (bancos, RabbitMQ e serviços)
+- `insomnia_collection.json` — coleção para importar no Insomnia
+- `REQISICOES.md` / `README_TESTES.md` — guias rápidos de uso (também gerados)
+- `pagamentos/src/rabbitmq/producer.js` — produtor RabbitMQ
+- `notificacoes/src/rabbitmq/consumer.js` — consumidor RabbitMQ
 
-## ▶️ Como Executar o Projeto
+## Troubleshooting rápido
+- RabbitMQ não conecta: verifique `docker-compose ps` e `docker-compose logs rabbitmq`
+- Consumer não recebe mensagens: verifique logs do `notificacoes-service` e a fila no management UI `http://localhost:15672`
+- Erro de migrations: confira se o `DATABASE_URL` está correto e se o banco está acessível
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-   cd SEU_REPOSITORIO
-   ```
-
-2. Suba os containers com o Docker Compose:
-   ```bash
-   ./start_DBs.sh
-   ```
-   > Este script executa o docker-compose.yml e inicializa os bancos de dados necessários e executa as migrações para cada serviço.
-   
-3. Inicie os serviços:
-   ```bash
-   cd user-service && npm start
-   cd product-service && npm start
-   cd order-service && npm start
-   cd payment-service && npm start
-   ```
-
----
-
-## 🌐 Endpoints (exemplos)
-
-- **User Service** → `http://localhost:3001`
-- **Product Service** → `http://localhost:3002`
-- **Order Service** → `http://localhost:3003`
-- **Payment Service** → `http://localhost:3004`
+## Contribuição
+Sinta-se à vontade para abrir issues ou PRs. Para desenvolvimento local, prefira rodar serviços isoladamente durante o desenvolvimento e usar `docker-compose` para testes de integração.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+Se quiser, posso:
+- Adicionar instruções de como rodar cada serviço em modo `dev` com `nodemon`,
+- Gerar scripts `Makefile` ou `scripts` no `package.json` para facilitar comandos repetidos,
+- Commitar e criar um branch com estas alterações.
 
-- Node.js / Express (exemplo)
-- PostgreSQL
-- Docker & Docker Compose
-- Scripts de migração (Knex / Sequelize, etc.)
-
----
-
-## 📌 Observações
-
-- Certifique-se de que as portas definidas em cada serviço não estejam em uso.
-- Configure variáveis de ambiente em cada serviço (ex.: `.env`) conforme necessário.
+Diga qual opção prefere que eu prossiga.

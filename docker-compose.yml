@@ -1,138 +1,162 @@
 version: '3.8'
 
 services:
-  # --- BANCOS DE DADOS ---
-  users-db:
-    image: postgres:15
-    container_name: users_db
+  # --- Serviço de Clientes ---
+  cliente-db:
+    image: postgres:15-alpine
+    container_name: cliente-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: users_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: clientedb
     volumes:
-      - users_postgres_data:/var/lib/postgresql/data
+      - cliente-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
-    healthcheck: # <-- ADICIONADO
-      test: ["CMD-SHELL", "pg_isready -U admin -d users_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - '5433:5432'
 
-  products-db:
-    image: postgres:15
-    container_name: products_db
+  # --- Serviço de Produtos ---
+  produto-db:
+    image: postgres:15-alpine
+    container_name: produto-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: products_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: produtodb
     volumes:
-      - products_postgres_data:/var/lib/postgresql/data
+      - produto-data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
-    healthcheck: # <-- ADICIONADO
-      test: ["CMD-SHELL", "pg_isready -U admin -d products_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - '5434:5432'
 
-  payments-db:
-    image: postgres:15
-    container_name: payments_db
+  pagamento-db:
+    image: postgres:15-alpine
+    container_name: pagamento-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: payments_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pagamentodb
     volumes:
-      - payments_postgres_data:/var/lib/postgresql/data
+      - pagamento-data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
-    healthcheck: # <-- ADICIONADO
-      test: ["CMD-SHELL", "pg_isready -U admin -d payments_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - '5435:5432'
 
+  # --- Banco de dados de Pedidos (MongoDB) ---
   orders-db:
     image: mongo:6.0
-    container_name: orders_db
+    container_name: orders-db
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
       - orders_mongo_data:/data/db
     ports:
-      - "27017:27017"
+      - '27017:27017'
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.getSiblingDB('admin').runCommand({ping: 1})"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.runCommand({ ping: 1 })\" || mongosh -u admin -p admin --authenticationDatabase admin --quiet --eval \"db.runCommand({ ping: 1 })\""]
       interval: 10s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
-  # --- SERVIÇOS DA APLICAÇÃO ---
-  user-service:
-    build: ./user-service
-    container_name: users_service
+  # --- UI para MongoDB ---
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
     restart: always
     ports:
-      - "3000:3000"
+      - '8081:8081'
     environment:
-      - DATABASE_URL=postgresql://admin:admin@users-db:5432/users_db
+      ME_CONFIG_MONGODB_SERVER: orders-db
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
     depends_on:
-      users-db: # <-- MODIFICADO
-        condition: service_healthy
+      - orders-db
 
-  product-service:
-    build: ./product-service
-    container_name: products_service
+  # --- Inicialização do Replica Set ---
+  orders-db-init:
+    image: mongo:6.0
+    depends_on:
+      - orders-db
+    entrypoint: >
+      bash -c '
+        set -e
+        until mongosh --host orders-db:27017 --quiet --eval "db.adminCommand({ ping: 1 })" >/dev/null 2>&1; do
+          echo "Waiting for MongoDB..."
+          sleep 2
+        done
+
+        mongosh --host orders-db:27017 --quiet --eval "try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{ _id: 0, host: \"orders-db:27017\" }]}) }"
+        mongosh --host orders-db:27017 --quiet --eval "db.adminCommand({ setDefaultRWConcern: 1, defaultWriteConcern: { w: \"majority\" } })"
+      '
+    restart: "no"
+
+  cliente-service:
+    container_name: cliente-service
+    build: ./cliente
     restart: always
     ports:
-      - "3001:3000"
+      - '3001:3001'
     environment:
-      - DATABASE_URL=postgresql://admin:admin@products-db:5432/products_db
+      DATABASE_URL: "postgresql://user:password@cliente-db:5432/clientedb"
     depends_on:
-      products-db: # <-- MODIFICADO
-        condition: service_healthy
+      - cliente-db
+    command: sh -c "npx prisma migrate deploy && npm start"
 
-  payment-service:
-    build: ./payment-service
-    container_name: payments_service
+  produto-service:
+    container_name: produto-service
+    build: ./produto
     restart: always
     ports:
-      - "3003:3000"
+      - '3002:3002'
     environment:
-      - DATABASE_URL=postgresql://admin:admin@payments-db:5432/payments_db
+      DATABASE_URL: "postgresql://user:password@produto-db:5432/produtodb"
     depends_on:
-      payments-db: # <-- MODIFICADO
-        condition: service_healthy
+      - produto-db
+    command: sh -c "npx prisma migrate deploy && npm start"
 
-  order-service:
-    build: ./order-service
-    container_name: orders_service
+  pagamentos-service:
+    container_name: pagamentos-service
+    build: ./pagamentos
     restart: always
     ports:
-      - "3002:3000"
+      - '3004:3004'
     environment:
-      - DATABASE_URL=mongodb://admin:admin@orders-db:27017/orders_db?authSource=admin
-      - USER_API_URL=http://user-service:3000
-      - PRODUCT_API_URL=http://product-service:3000
-      - PAYMENT_API_URL=http://payment-service:3000
+      DATABASE_URL: "postgresql://user:password@pagamento-db:5432/pagamentodb"
+      RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
     depends_on:
-      orders-db: # <-- MODIFICADO
-        condition: service_healthy
-      user-service:
-        condition: service_started # <-- Or service_healthy if your app has a healthcheck
-      product-service:
-        condition: service_started
-        
-  # --- FERRAMENTAS DE GERENCIAMENTO ---
+      - pagamento-db
+      - rabbitmq
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm start"
+
+  notificacoes-service:
+    container_name: notificacoes-service
+    build: ./notificacoes
+    restart: always
+    ports:
+      - '3005:3005'
+    environment:
+      RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
+    depends_on:
+      - rabbitmq
+
+  pedidos-service:
+    container_name: pedidos-service
+    build: ./pedidos
+    restart: always
+    ports:
+      - '3003:3003'
+    env_file:
+      - ./.env
+    depends_on:
+      - orders-db-init
+    command: sh -c "npx prisma db push && npm start"
+
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin_ui
+    container_name: pgadmin4_ecommerce
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -143,30 +167,24 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - users-db
-      - products-db
-      - payments-db
+      - produto-db
+      - cliente-db
+      - pagamento-db
 
-  mongo-express:
-    image: mongo-express
-    container_name: mongo_express_ui
-    restart: always
+  # --- RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
     ports:
-      - "8081:8081"
+      - "5672:5672"  # Porta para a aplicação
+      - "15672:15672" # Porta para a UI de gerenciamento
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
-      ME_CONFIG_MONGODB_SERVER: orders-db
-      ME_CONFIG_MONGODB_URL: mongodb://admin:admin@orders-db:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
-    depends_on:
-      - orders-db
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
 
-# --- VOLUMES PARA PERSISTÊNCIA DE DADOS ---
 volumes:
-  users_postgres_data:
-  products_postgres_data:
-  payments_postgres_data:
-  orders_mongo_data:
+  cliente-data:
+  produto-data:
+  pagamento-data:
   pgadmin_data:
+  orders_mongo_data:
