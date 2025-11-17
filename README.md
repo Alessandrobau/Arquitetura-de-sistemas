@@ -69,35 +69,3 @@ Fluxo de teste recomendado (End-to-End):
 4. Criar tipo de pagamento (`POST /api/type-payments` no `pagamentos-service`)
 5. Criar pagamento (`POST /api/payments` no `pagamentos-service`) — referenciando `orderId`
 6. Processar pagamento (`PATCH /api/payments/:id/process`) — quando aprovado, publica evento no RabbitMQ e o `notificacoes-service` exibirá a mensagem nos logs
-
-Exemplo de processamento do pagamento via curl:
-
-```bash
-curl -X PATCH http://localhost:3004/api/payments/1/process \
-  -H "Content-Type: application/json" \
-  -d '{"value": 3500.00}'
-```
-
-## Arquivos importantes
-- `docker-compose.yml` — orquestração de containers (bancos, RabbitMQ e serviços)
-- `insomnia_collection.json` — coleção para importar no Insomnia
-- `REQISICOES.md` / `README_TESTES.md` — guias rápidos de uso (também gerados)
-- `pagamentos/src/rabbitmq/producer.js` — produtor RabbitMQ
-- `notificacoes/src/rabbitmq/consumer.js` — consumidor RabbitMQ
-
-## Troubleshooting rápido
-- RabbitMQ não conecta: verifique `docker-compose ps` e `docker-compose logs rabbitmq`
-- Consumer não recebe mensagens: verifique logs do `notificacoes-service` e a fila no management UI `http://localhost:15672`
-- Erro de migrations: confira se o `DATABASE_URL` está correto e se o banco está acessível
-
-## Contribuição
-Sinta-se à vontade para abrir issues ou PRs. Para desenvolvimento local, prefira rodar serviços isoladamente durante o desenvolvimento e usar `docker-compose` para testes de integração.
-
----
-
-Se quiser, posso:
-- Adicionar instruções de como rodar cada serviço em modo `dev` com `nodemon`,
-- Gerar scripts `Makefile` ou `scripts` no `package.json` para facilitar comandos repetidos,
-- Commitar e criar um branch com estas alterações.
-
-Diga qual opção prefere que eu prossiga.
