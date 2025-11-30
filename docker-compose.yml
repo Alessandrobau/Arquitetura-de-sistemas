@@ -138,10 +138,9 @@ services:
     container_name: cliente-service
     build: ./cliente
     restart: always
-    ports:
-      - '3001:3001'
     environment:
       DATABASE_URL: "postgresql://user:password@cliente-db:5432/clientedb"
+      REDIS_URL: "redis://redis_cache:6379"
     depends_on:
       - cliente-db
     command: sh -c "npx prisma migrate deploy && npm start"
@@ -150,10 +149,9 @@ services:
     container_name: produto-service
     build: ./produto
     restart: always
-    ports:
-      - '3002:3002'
     environment:
       DATABASE_URL: "postgresql://user:password@produto-db:5432/produtodb"
+      REDIS_URL: "redis://redis_cache:6379"
     depends_on:
       - produto-db
     command: sh -c "npx prisma migrate deploy && npm start"
@@ -162,12 +160,11 @@ services:
     container_name: pagamentos-service
     build: ./pagamentos
     restart: on-failure
-    ports:
-      - '3004:3004'
     environment:
       DATABASE_URL: "postgresql://user:password@pagamento-db:5432/pagamentodb"
       RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
       KAFKA_BROKER: "kafka:29092"
+      REDIS_URL: "redis://redis_cache:6379"
     depends_on:
       - pagamento-db
       - rabbitmq
@@ -178,8 +175,6 @@ services:
     container_name: notificacoes-service
     build: ./notificacoes
     restart: always
-    ports:
-      - '3005:3005'
     environment:
       RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
     depends_on:
@@ -189,16 +184,38 @@ services:
     container_name: pedidos-service
     build: ./pedidos
     restart: on-failure
-    ports:
-      - '3003:3003'
     env_file:
       - ./.env
     environment:
       KAFKA_BROKER: "kafka:29092"
+      REDIS_URL: "redis://redis_cache:6379"
     depends_on:
       - orders-db-init
       - kafka
     command: sh -c "npx prisma db push && npm start"
+
+  kong:
+    image: kong:3.4
+    container_name: kong
+    restart: always
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/declarative/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+    volumes:
+      - ./kong/kong.yml:/usr/local/kong/declarative/kong.yml:ro
+    depends_on:
+      - cliente-service
+      - produto-service
+      - pagamentos-service
+      - pedidos-service
 
   pgadmin:
     image: dpage/pgadmin4
@@ -228,9 +245,30 @@ services:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
 
+  redis-cache:
+      image: redis:7-alpine
+      container_name: redis_cache
+      restart: always
+      ports:
+        - "6378:6379"
+      volumes:
+        - redis-data:/data
+      
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis_commander
+    restart: always
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis_cache:6379
+    depends_on:
+      - redis-cache
+
 volumes:
   cliente-data:
   produto-data:
   pagamento-data:
   pgadmin_data:
   orders_mongo_data:
+  redis-data:

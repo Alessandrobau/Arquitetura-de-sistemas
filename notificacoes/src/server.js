@@ -5,7 +5,7 @@ const { connectConsumer, closeConsumer } = require('./rabbitmq/consumer');
 const app = express();
 const PORT = process.env.PORT || 3005;
 
-app.use(express.json());
+app.use(express.json({ limit: '200kb' }));
 app.use('/api', router);
 
 const server = app.listen(PORT, async () => {

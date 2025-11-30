@@ -12,6 +12,9 @@ const router = Router();
 router.post('/type-payments', createTypePayment);
 router.get('/type-payments', getAllTypePayments);
 
+// Additional public path required by assignment: /payments/types
+router.get('/payments/types', getAllTypePayments);
+
 router.post('/payments', createPayment);
 router.patch('/payments/:id/process', processPayment);
 router.get('/payments/order/:orderId', getPaymentsByOrderId);
