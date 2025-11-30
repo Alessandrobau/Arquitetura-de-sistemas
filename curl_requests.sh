@@ -4,6 +4,8 @@
 PAUSE_TIME=4 
 
 # Variáveis de Configuração
+
+# mudar para seu ambiente ex. localhost ou IP da máquina de destino
 BASE_IP="192.168.0.90"
 API_PORT="8000"
 CONTENT_TYPE_HEADER="-H \"Content-Type: application/json\""
