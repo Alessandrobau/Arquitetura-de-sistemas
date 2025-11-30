@@ -1,4 +1,5 @@
 const { clientService } = require("../services/cliente_service");
+const cache = require('../cache');
 
 class ClienteController {
   static async create(req, res) {
@@ -21,10 +22,17 @@ class ClienteController {
 
   static async getById(req, res) {
     try {
-      const client = await clientService.getById(req.params.id);
+      const id = req.params.id;
+      const cacheKey = `users:${id}`;
+      const cached = await cache.get(cacheKey);
+      if (cached) return res.json(cached);
+
+      const client = await clientService.getById(id);
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
       }
+      // TTL 1 dia
+      await cache.set(cacheKey, client, 86400);
       return res.json(client);
     } catch (error) {
       return res.status(500).json({ message: error.message });

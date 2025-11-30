@@ -1,4 +1,5 @@
 const { orderService } = require("../services/order_service.js");
+const cache = require('../cache');
 
 async function createOrder(req, res) {
   try {
@@ -24,10 +25,17 @@ async function getOrders(req, res) {
 
 async function getOrderById(req, res) {
   try {
-    const order = await orderService.findById(req.params.id);
+    const id = req.params.id;
+    const cacheKey = `orders:${id}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const order = await orderService.findById(id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    // TTL 30 dias
+    await cache.set(cacheKey, order, 30 * 24 * 60 * 60);
     return res.json(order);
   } catch (error) {
     return res.status(500).json({ message: error.message });

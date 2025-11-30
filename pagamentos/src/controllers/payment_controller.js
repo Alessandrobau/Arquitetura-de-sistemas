@@ -1,4 +1,5 @@
 const { paymentService } = require('../services/payment_service.js');
+const cache = require('../cache');
 
 async function createTypePayment(req, res) {
     try {
@@ -11,7 +12,13 @@ async function createTypePayment(req, res) {
 
 async function getAllTypePayments(req, res) {
     try {
+        const cacheKey = 'payments:types';
+        const cached = await cache.get(cacheKey);
+        if (cached) return res.status(200).json(cached);
+
         const typePayments = await paymentService.getAllTypePayments();
+        // TTL infinito -> store without expire
+        await cache.set(cacheKey, typePayments, null);
         res.status(200).json(typePayments);
     } catch (error) {
         res.status(500).json({ message: error.message });

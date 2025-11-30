@@ -1,0 +1,64 @@
+_format_version: "2.1"
+
+services:
+  - name: cliente-service
+    url: http://cliente-service:3001
+    routes:
+      - name: cliente-route
+        strip_path: false
+        paths:
+          - /api/users
+          - /api/clients
+          - /users
+          - /clients
+  - name: produto-service
+    url: http://produto-service:3002
+    routes:
+      - name: produto-route
+        strip_path: false
+        paths:
+          - /api/products
+          - /products
+  - name: pedidos-service
+    url: http://pedidos-service:3003
+    routes:
+      - name: pedidos-route
+        strip_path: false
+        paths:
+          - /api/orders
+          - /orders
+  - name: pagamentos-service
+    url: http://pagamentos-service:3004
+    routes:
+      - name: pagamentos-route
+        strip_path: false
+        paths:
+          - /api/payments
+          - /api/payments/types
+          - /api/type-payments
+          - /type-payments
+          - /payments
+          - /payments/types
+
+  - name: notificacoes-service
+    url: http://notificacoes-service:3005
+    routes:
+      - name: notificacoes-route
+        strip_path: false
+        paths:
+          - /api/notifications
+          - /notifications
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 50
+      policy: local
+    enabled: true
+    # apply globally
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 204800
+    enabled: true
+
+# Note: notificacoes-service is internal and not proxied through Kong
