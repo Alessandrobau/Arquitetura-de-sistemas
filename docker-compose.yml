@@ -259,7 +259,7 @@ services:
     container_name: redis_commander
     restart: always
     ports:
-      - "8082:8081"
+      - "8083:8081"
     environment:
       - REDIS_HOSTS=local:redis_cache:6379
     depends_on:
