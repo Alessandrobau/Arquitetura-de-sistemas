@@ -1,6 +1,6 @@
 # E-Commerce Microservices — README
 
-Este repositório contém um conjunto de microserviços para um e-commerce (Clientes, Produtos, Pedidos, Pagamentos e Notificações) preparados para rodar via Docker Compose ou localmente para desenvolvimento.
+Este repositório contém um conjunto de microserviços para um e-commerce (Clientes, Produtos, Pedidos, Pagamentos e Notificações) preparados para rodar via Docker Compose ou localmente para desenvolvimento. Repositório utilizado na matéria de arquitetura de sistemas
 
 ## Serviços e portas (padrão do docker-compose)
 - `cliente-service` — `http://localhost:3001` (Clientes)
